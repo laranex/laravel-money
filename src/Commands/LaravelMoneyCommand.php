@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Laranex\LaravelMoney\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class LaravelMoneyCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-money';
 
     public $description = 'My command';
 
