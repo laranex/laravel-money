@@ -16,10 +16,12 @@ class LaravelMoneyServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('laravel-money')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_laravel_money_table')
-            ->hasCommand(LaravelMoneyCommand::class);
+            ->name('laravel-money');
+        /*
+        ->hasConfigFile()
+        ->hasViews()
+        ->hasMigration('create_laravel_money_table')
+        ->hasCommand(LaravelMoneyCommand::class);
+        */
     }
 }
