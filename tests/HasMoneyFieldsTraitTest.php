@@ -13,8 +13,8 @@ class Wallet extends Model
     protected $moneyFields = ['balance'];
 }
 
-$wallet = new Wallet();
-$amount = "10000";
+$wallet = new Wallet;
+$amount = '10000';
 
 test('convert the Money instance into string through mutator', function () use ($wallet, $amount) {
     $wallet->balance = LaravelMoneyFacade::parseMoney($amount);
@@ -24,7 +24,7 @@ test('convert the Money instance into string through mutator', function () use (
 });
 
 test('throw exception when setting invalid Money instance', function () use ($wallet, $amount) {
-    expect(fn() => $wallet->balance = $amount)
+    expect(fn () => $wallet->balance = $amount)
         ->toThrow(InvalidMoneyInstanceException::class);
 });
 

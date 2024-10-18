@@ -2,9 +2,9 @@
 
 namespace Laranex\LaravelMoney;
 
+use Laranex\LaravelMoney\Commands\LaravelMoneyCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Laranex\LaravelMoney\Commands\LaravelMoneyCommand;
 
 class LaravelMoneyServiceProvider extends PackageServiceProvider
 {

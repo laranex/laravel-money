@@ -14,7 +14,7 @@ trait HasMoneyFields
 
             return new Money(
                 parent::getAttribute($key),
-                new Currency("USD")
+                new Currency('USD')
             );
         }
 
@@ -24,7 +24,7 @@ trait HasMoneyFields
     public function setAttribute($key, $value): void
     {
         if (in_array($key, $this->getMoneyFields())) {
-            if (!$value instanceof Money) {
+            if (! $value instanceof Money) {
                 throw new InvalidMoneyInstanceException("The value for '{$key}' must be an instance of Money/Money.");
             }
 
