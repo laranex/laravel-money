@@ -12,9 +12,11 @@ class TestCase extends Orchestra
     {
         parent::setUp();
 
+        /*
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Laranex\\LaravelMoney\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
+        */
     }
 
     protected function getPackageProviders($app)
@@ -26,7 +28,9 @@ class TestCase extends Orchestra
 
     public function getEnvironmentSetUp($app)
     {
+        /*
         config()->set('database.default', 'testing');
+        */
 
         /*
         $migration = include __DIR__.'/../database/migrations/create_laravel-money_table.php.stub';
