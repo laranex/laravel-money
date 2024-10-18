@@ -14,7 +14,7 @@ class Wallet extends Model
 }
 
 $wallet = new Wallet;
-$amount = '10000';
+$amount = 10000;
 
 test('convert the Money instance into string through mutator', function () use ($wallet, $amount) {
     $wallet->balance = LaravelMoneyFacade::parseMoney($amount);

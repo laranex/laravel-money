@@ -7,7 +7,7 @@ use Money\Money;
 
 class LaravelMoney
 {
-    public function parseMoney(string $amount): Money
+    public function parseMoney(float|int $amount): Money
     {
         return new Money(
             $amount,

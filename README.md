@@ -37,7 +37,7 @@ composer require laranex/laravel-money
   
     // Storing Money Field
     $wallet = new Wallet();
-    $wallet->balance = \Laranex\LaravelMoney\Facades\LaravelMoney::parseMoney('10000');
+    $wallet->balance = \Laranex\LaravelMoney\Facades\LaravelMoney::parseMoney($amount);
   
     // Retrieving Money Field
     $wallet = Wallet::find(1);
