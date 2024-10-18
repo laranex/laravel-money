@@ -2,10 +2,10 @@
 
 use Money\Money;
 
-$amount = "10000";
+$amount = '10000';
 
-test("parseMoney method returns Money instance", function () use ($amount) {
-    expect((new \Laranex\LaravelMoney\LaravelMoney())->parseMoney($amount))
+test('parseMoney method returns Money instance', function () use ($amount) {
+    expect((new \Laranex\LaravelMoney\LaravelMoney)->parseMoney($amount))
         ->toBeInstanceOf(Money::class);
 });
 
