@@ -9,7 +9,7 @@ test('parseMoney method returns Money instance', function () use ($amount) {
         ->toBeInstanceOf(Money::class);
 });
 
-test('parseMoney method can be access through LaravelMoneyFacade', function () use ($amount) {
+test('parseMoney method can be accessed through LaravelMoneyFacade', function () use ($amount) {
     expect(\Laranex\LaravelMoney\Facades\LaravelMoney::parseMoney($amount))
         ->toBeInstanceOf(Money::class);
 });
