@@ -1,40 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laranex\LaravelMoney\Tests;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Laranex\LaravelMoney\LaravelMoneyServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
-class TestCase extends Orchestra
+abstract class TestCase extends Orchestra
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        /*
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Laranex\\LaravelMoney\\Database\\Factories\\'.class_basename($modelName).'Factory'
-        );
-        */
-    }
-
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [
             LaravelMoneyServiceProvider::class,
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    protected function defineEnvironment($app): void
     {
-        /*
-        config()->set('database.default', 'testing');
-        */
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('k', 32)));
+        $app['config']->set('database.default', 'testing');
+    }
 
-        /*
-        $migration = include __DIR__.'/../database/migrations/create_laravel-money_table.php.stub';
-        $migration->up();
-        */
+    protected function defineDatabaseMigrations(): void
+    {
+        Schema::create('products', function (Blueprint $table): void {
+            $table->id();
+            $table->bigInteger('price')->nullable();
+            $table->bigInteger('cost')->nullable();
+            $table->bigInteger('deposit')->nullable();
+            $table->timestamps();
+        });
     }
 }
