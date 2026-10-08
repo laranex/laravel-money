@@ -32,9 +32,9 @@ class InvalidMoneyException extends InvalidArgumentException
     public static function invalidStoredAmount(string $key, mixed $value): self
     {
         return new self(sprintf(
-            'The stored value for [%s] must be an integer amount in minor units, %s given.',
+            'The stored value for [%s] must be an integer amount in minor units, %s given. Store minor units in an integer column (e.g. 1050 for 10.50), not a decimal or float column.',
             $key,
-            get_debug_type($value),
+            is_string($value) ? sprintf('string "%s"', $value) : get_debug_type($value),
         ));
     }
 }

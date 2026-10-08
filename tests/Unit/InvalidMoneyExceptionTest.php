@@ -18,5 +18,10 @@ it('describes a currency mismatch', function () {
 
 it('describes an invalid stored amount', function () {
     expect(InvalidMoneyException::invalidStoredAmount('price', 1.5)->getMessage())
-        ->toBe('The stored value for [price] must be an integer amount in minor units, float given.');
+        ->toBe('The stored value for [price] must be an integer amount in minor units, float given. Store minor units in an integer column (e.g. 1050 for 10.50), not a decimal or float column.');
+});
+
+it('quotes an invalid stored string amount', function () {
+    expect(InvalidMoneyException::invalidStoredAmount('price', '10.50')->getMessage())
+        ->toBe('The stored value for [price] must be an integer amount in minor units, string "10.50" given. Store minor units in an integer column (e.g. 1050 for 10.50), not a decimal or float column.');
 });
