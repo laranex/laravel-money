@@ -13,7 +13,7 @@ First release.
 - The currency is no longer hard-coded to USD: `config/money.php` adds `default_currency` (env `MONEY_CURRENCY`, default `USD`), and each attribute can pin its own currency with `MoneyCast::class.':MMK'`.
 - Money attributes use a standard Eloquent cast, `Laranex\LaravelMoney\Casts\MoneyCast`, instead of the `HasMoneyFields` trait and `$moneyFields` property. `null` values are supported and models serialize money as `['amount' => '1050', 'currency' => 'USD']`.
 - The `LaravelMoney` facade offers `make()`, `parse()`, `format()`, `currency()` and `defaultCurrency()`; `parseMoney()` is removed.
-- Invalid assignments throw `Laranex\LaravelMoney\Exceptions\InvalidMoneyException` (an `InvalidArgumentException`), replacing `InvalidMoneyInstanceException`; assigning a `Money` in a different currency than the attribute stores is now rejected.
+- Invalid assignments throw `Laranex\LaravelMoney\Exceptions\InvalidMoneyException` (an `InvalidArgumentException`), replacing `InvalidMoneyInstanceException`; assigning a `Money` in a different currency than the attribute stores is now rejected. Reading a stored value that is not an int or an integer string (for example `"10.50"` or `"10.00"` from a `decimal` column) throws `InvalidMoneyException` explaining that the column must hold integer minor units, instead of a moneyphp `InvalidArgumentException` or a silently misread amount.
 - Dropped `spatie/laravel-package-tools`.
 
 ### Upgrading

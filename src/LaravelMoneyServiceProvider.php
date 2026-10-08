@@ -34,7 +34,7 @@ class LaravelMoneyServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/../config/money.php' => config_path('money.php'),
+            __DIR__.'/../config/money.php' => $this->app->configPath('money.php'),
         ], ['laravel-money', 'laravel-money-config']);
     }
 }

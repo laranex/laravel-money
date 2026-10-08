@@ -48,4 +48,4 @@ Use this skill when a Laravel application stores prices, balances or totals and 
 
 - do not assign ints, floats or strings to a cast attribute; wrap them in Money first (it throws `InvalidMoneyException`)
 - do not assign Money in a different currency than the attribute stores; convert it first
-- do not store decimals in `decimal`/`float` columns for cast attributes; the cast stores minor units
+- do not store decimals in `decimal`/`float` columns for cast attributes; the cast stores minor units and throws `InvalidMoneyException` when it reads a decimal string such as `"10.50"`

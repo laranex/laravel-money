@@ -36,7 +36,7 @@ class MoneyCast implements CastsAttributes, SerializesCastableAttributes
             return null;
         }
 
-        if (! is_int($value) && ! (is_string($value) && is_numeric($value))) {
+        if (! is_int($value) && ! (is_string($value) && is_numeric($value) && preg_match('/^-?[0-9]+$/', $value) === 1)) {
             throw InvalidMoneyException::invalidStoredAmount($key, $value);
         }
 

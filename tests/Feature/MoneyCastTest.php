@@ -91,8 +91,22 @@ it('rejects a stored value that is not an integer amount', function () {
     $cast = new MoneyCast;
 
     expect(fn () => $cast->get(new Product, 'price', 1.5, []))
-        ->toThrow(InvalidMoneyException::class, 'The stored value for [price] must be an integer amount in minor units, float given.');
+        ->toThrow(InvalidMoneyException::class, 'The stored value for [price] must be an integer amount in minor units, float given. Store minor units in an integer column (e.g. 1050 for 10.50), not a decimal or float column.');
 });
+
+it('rejects stored strings that are not integer amounts', function (string $value) {
+    $cast = new MoneyCast;
+
+    expect(fn () => $cast->get(new Product, 'price', $value, []))
+        ->toThrow(InvalidMoneyException::class, 'The stored value for [price] must be an integer amount in minor units, string "'.$value.'" given.');
+})->with([
+    'decimal column' => ['10.50'],
+    'integer-ish decimal' => ['10.00'],
+    'exponent' => ['1e3'],
+    'leading plus' => ['+10'],
+    'whitespace' => [' 10'],
+    'empty' => [''],
+]);
 
 it('casts integer and numeric string stored values', function () {
     $cast = new MoneyCast('EUR');
@@ -100,6 +114,7 @@ it('casts integer and numeric string stored values', function () {
 
     expect($cast->get($product, 'price', 1050, [])?->getAmount())->toBe('1050')
         ->and($cast->get($product, 'price', '1050', [])?->getAmount())->toBe('1050')
+        ->and($cast->get($product, 'price', '-1050', [])?->getAmount())->toBe('-1050')
         ->and($cast->get($product, 'price', 1050, [])?->getCurrency()->getCode())->toBe('EUR');
 });
 

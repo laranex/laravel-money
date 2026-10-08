@@ -64,7 +64,7 @@ LaravelMoney::format($product->cost);              // "10.50"
 $product->toArray()['cost'];                       // ['amount' => '1050', 'currency' => 'USD']
 ```
 
-`null` columns stay `null`. Assigning anything other than a `Money` object, or a `Money` in a different currency than the attribute stores, throws `Laranex\LaravelMoney\Exceptions\InvalidMoneyException`.
+`null` columns stay `null`. Assigning anything other than a `Money` object, or a `Money` in a different currency than the attribute stores, throws `Laranex\LaravelMoney\Exceptions\InvalidMoneyException`. So does reading a stored value that is not an integer amount, such as `"10.50"` from a `decimal` column.
 
 ## Testing
 
