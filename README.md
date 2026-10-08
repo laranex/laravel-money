@@ -5,7 +5,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/laranex/laravel-money.svg?style=flat-square)](https://packagist.org/packages/laranex/laravel-money)
 [![License](https://img.shields.io/packagist/l/laranex/laravel-money.svg?style=flat-square)](LICENSE.md)
 
-Exact, currency-aware money for Laravel: an immutable `Money` value object with arithmetic, percentages, allocation, rounding, formatting and Eloquent casts, with the right precision for every currency and never a float. Built for humans and AI agents.
+Money for Laravel: exact, currency-aware amounts with arithmetic, percentages, allocation, formatting and Eloquent casts. Built for humans and AI agents.
 
 ## Documentation
 
