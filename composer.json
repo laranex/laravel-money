@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laranex/laravel-money",
-    "description": "Currency-aware money for Laravel: an immutable Money value object with exact arithmetic, percentages, allocation, Eloquent casts and formatting for every currency",
+    "description": "Money for Laravel: exact, currency-aware amounts with arithmetic, percentages, allocation, formatting and Eloquent casts.",
     "keywords": [
         "laravel",
         "laranex",
