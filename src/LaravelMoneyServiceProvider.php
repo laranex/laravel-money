@@ -17,11 +17,16 @@ class LaravelMoneyServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/money.php', 'money');
 
-        $this->app->singleton(LaravelMoney::class, function (Container $app): LaravelMoney {
-            $currency = $app->make(ConfigRepository::class)->get('money.default_currency', 'USD');
+        $this->app->singleton(CurrencyRegistry::class, function (Container $app): CurrencyRegistry {
+            $custom = $app->make(ConfigRepository::class)->get('money.currencies', []);
 
-            return new LaravelMoney(is_string($currency) && $currency !== '' ? $currency : 'USD');
+            return new CurrencyRegistry(is_array($custom) ? $custom : []);
         });
+
+        $this->app->singleton(LaravelMoney::class, fn (Container $app): LaravelMoney => new LaravelMoney(
+            $app->make(ConfigRepository::class),
+            $app->make(CurrencyRegistry::class),
+        ));
     }
 
     /**
