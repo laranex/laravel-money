@@ -9,7 +9,7 @@ First release.
 ### Changed
 - Requires PHP 8.1+ and supports Laravel 10 through 13.
 - Rebuilt on the official Laravel package skeleton (Pest, PHPStan, Pint, Testbench workbench, GitHub Actions matrix).
-- Built on `moneyphp/money` ^4 (the unreleased code depended on the unrelated `money/money` package).
+- Built on `moneyphp/money` ^3.3 or ^4 (the unreleased code depended on the unrelated `money/money` package).
 - The currency is no longer hard-coded to USD: `config/money.php` adds `default_currency` (env `MONEY_CURRENCY`, default `USD`), and each attribute can pin its own currency with `MoneyCast::class.':MMK'`.
 - Money attributes use a standard Eloquent cast, `Laranex\LaravelMoney\Casts\MoneyCast`, instead of the `HasMoneyFields` trait and `$moneyFields` property. `null` values are supported and models serialize money as `['amount' => '1050', 'currency' => 'USD']`.
 - The `LaravelMoney` facade offers `make()`, `parse()`, `format()`, `currency()` and `defaultCurrency()`; `parseMoney()` is removed.
