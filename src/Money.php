@@ -32,6 +32,13 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
 {
     use Macroable;
 
+    /**
+     * The largest scale percentageOf() and ratioOf() accept, and the largest
+     * number of decimals (either sign) roundTo() accepts, so no call can
+     * force a huge power-of-ten computation.
+     */
+    public const MAX_SCALE = 100;
+
     private function __construct(
         private readonly MoneyPhp $money,
         private readonly int $precision,
@@ -353,7 +360,8 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
 
     /**
      * What percentage this amount is of $total, as a decimal string:
-     * Money::of('25')->percentageOf(Money::of('200')) is "12.50".
+     * Money::of('25')->percentageOf(Money::of('200')) is "12.50". The scale
+     * must be between 0 and MAX_SCALE.
      *
      * @return numeric-string
      */
@@ -364,6 +372,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
 
     /**
      * This amount divided by $other, as a decimal string: 50 / 200 is "0.2500".
+     * The scale must be between 0 and MAX_SCALE.
      *
      * @return numeric-string
      */
@@ -452,9 +461,14 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
     /**
      * Round to fewer decimals than the currency has, keeping minor-unit
      * storage: Money::of('12.34')->roundTo(0) is 12.00; roundTo(-1) is 10.00.
+     * $decimals must be between -MAX_SCALE and MAX_SCALE.
      */
     public function roundTo(int $decimals, ?Rounding $rounding = null): self
     {
+        if ($decimals < -self::MAX_SCALE || $decimals > self::MAX_SCALE) {
+            throw InvalidMoneyException::invalidDecimals($decimals);
+        }
+
         if ($decimals >= $this->precision) {
             return $this;
         }
@@ -562,7 +576,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
             throw InvalidMoneyException::divisionByZero();
         }
 
-        if ($scale < 0) {
+        if ($scale < 0 || $scale > self::MAX_SCALE) {
             throw InvalidMoneyException::invalidScale($scale);
         }
 

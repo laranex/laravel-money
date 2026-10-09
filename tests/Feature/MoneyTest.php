@@ -48,16 +48,55 @@ describe('construction', function (): void {
             ->and(Money::of('1', new Currency('JPY'))->currency())->toBe('JPY');
     });
 
-    it('strips grouping commas and spaces', function (string $input, string $minor): void {
+    it('accepts plain digits and consistent grouping', function (string $input, string $minor): void {
         expect(Money::of($input, 'USD')->amount())->toBe($minor);
     })->with([
+        ['1234567.89', '123456789'],
         ['1,234.50', '123450'],
+        ['12,345', '1234500'],
+        ['123,456', '12345600'],
         ['1,234,567.89', '123456789'],
+        ['1,234,567,890', '123456789000'],
         ['12,34,567.00', '123456700'],
+        ['1,23,456', '12345600'],
+        ['1,23,45,678', '1234567800'],
+        ['99,99,99,999.99', '99999999999'],
         ['1 234 567.01', '123456701'],
         ["1\u{00A0}234.50", '123450'],
+        ["12\u{00A0}34\u{00A0}567", '123456700'],
+        ["1\u{202F}234\u{202F}567", '123456700'],
         ['  99.99  ', '9999'],
         ['+5', '500'],
+    ]);
+
+    it('rejects mixed separators and irregular groups', function (string $input): void {
+        expect(fn () => Money::of($input))->toThrow(MoneyParseException::class, 'Cannot parse "'.$input.'" as an amount.');
+    })->with([
+        'space then comma' => ['1 234,567'],
+        'comma then space' => ['1,234 567'],
+        'comma then no-break space' => ["1,234\u{00A0}567"],
+        'space then no-break space' => ["1 234\u{00A0}567"],
+        'no-break then narrow no-break space' => ["1\u{00A0}234\u{202F}567"],
+        'irregular groups' => ['1,234,56,789'],
+        'Indian then Western groups' => ['12,34,567,890'],
+        'Western then Indian groups' => ['1,234,56,789.00'],
+        'last group of two' => ['12,345,67'],
+        'last group of four' => ['1,23,4567'],
+        'first group of four' => ['1234,567'],
+        'Indian first group of three' => ['123,45,678'],
+        'two-digit group' => ['1,23'],
+        'group of four' => ['1,2345'],
+        'double separator' => ['1,,234'],
+        'leading separator' => [',123'],
+        'trailing separator' => ['1,234,'],
+        'separator before decimals' => ['1,234,.50'],
+        'grouped decimals' => ['1,234.567,8'],
+        'dot grouping' => ['1.234.567'],
+        'dot grouping with comma decimals' => ['1.234,50'],
+        'apostrophe' => ["1'234"],
+        'underscore' => ['1_234'],
+        'fullwidth digits' => ['１,２３４'],
+        'Myanmar digits' => ['၁,၂၃၄'],
     ]);
 
     it('parses negatives and normalizes negative zero', function (): void {
@@ -301,7 +340,10 @@ describe('percentages and ratios', function (): void {
             ->and(Money::of('-50', 'JPY')->percentageOf(Money::of('200', 'JPY')))->toBe('-25.00')
             ->and(fn () => Money::of('1')->percentageOf(Money::zero()))->toThrow(InvalidMoneyException::class, 'Cannot divide money by zero.')
             ->and(fn () => Money::of('1')->percentageOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class)
-            ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), -1))->toThrow(InvalidMoneyException::class, 'The scale must be zero or positive, -1 given.');
+            ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), -1))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, -1 given.')
+            ->and(Money::of('1')->percentageOf(Money::of('3'), Money::MAX_SCALE))->toBe('33.'.str_repeat('3', 100))
+            ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), 101))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, 101 given.')
+            ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), PHP_INT_MAX))->toThrow(InvalidMoneyException::class);
     });
 
     it('computes ratios', function (): void {
@@ -310,7 +352,10 @@ describe('percentages and ratios', function (): void {
             ->and(Money::of('2')->ratioOf(Money::of('3'), 2, Rounding::Floor))->toBe('0.66')
             ->and(fn () => Money::of('1')->ratioOf(Money::zero()))->toThrow(InvalidMoneyException::class)
             ->and(fn () => Money::of('1')->ratioOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class)
-            ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), -2))->toThrow(InvalidMoneyException::class, 'The scale must be zero or positive, -2 given.');
+            ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), -2))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, -2 given.')
+            ->and(Money::of('1')->ratioOf(Money::of('3'), Money::MAX_SCALE))->toBe('0.'.str_repeat('3', 100))
+            ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), 101))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, 101 given.')
+            ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), PHP_INT_MAX))->toThrow(InvalidMoneyException::class);
     });
 });
 
@@ -399,8 +444,16 @@ describe('rounding', function (): void {
             ->and(Money::of('15', 'JPY')->roundTo(-1)->amount())->toBe('20')
             ->and(Money::of('12.345', 'KWD')->roundTo(2)->toDecimal())->toBe('12.350')
             ->and(Money::of('12.34')->roundTo(2)->toDecimal())->toBe('12.34')
-            ->and(Money::of('12.34')->roundTo(5)->toDecimal())->toBe('12.34');
+            ->and(Money::of('12.34')->roundTo(5)->toDecimal())->toBe('12.34')
+            ->and(Money::of('12.34')->roundTo(Money::MAX_SCALE)->toDecimal())->toBe('12.34')
+            ->and(Money::of('12.34')->roundTo(-Money::MAX_SCALE)->toDecimal())->toBe('0.00')
+            ->and(Money::of('12.34')->roundTo(-Money::MAX_SCALE, Rounding::Ceiling)->amount())->toBe('1'.str_repeat('0', 102));
     });
+
+    it('rejects roundTo decimals beyond MAX_SCALE', function (int $decimals): void {
+        expect(Money::MAX_SCALE)->toBe(100)
+            ->and(fn () => Money::of('12.34')->roundTo($decimals))->toThrow(InvalidMoneyException::class, sprintf('The decimals must be between -100 and 100, %d given.', $decimals));
+    })->with([101, -101, PHP_INT_MAX, PHP_INT_MIN]);
 
     it('applies every rounding mode to ties and non-ties', function (Rounding $rounding, array $expected): void {
         $results = array_map(

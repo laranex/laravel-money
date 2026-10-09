@@ -84,7 +84,12 @@ class InvalidMoneyException extends MoneyException
 
     public static function invalidScale(int $scale): self
     {
-        return new self(sprintf('The scale must be zero or positive, %d given.', $scale));
+        return new self(sprintf('The scale must be between 0 and %d, %d given.', Money::MAX_SCALE, $scale));
+    }
+
+    public static function invalidDecimals(int $decimals): self
+    {
+        return new self(sprintf('The decimals must be between -%d and %d, %d given.', Money::MAX_SCALE, Money::MAX_SCALE, $decimals));
     }
 
     public static function invalidRatios(string $reason): self
