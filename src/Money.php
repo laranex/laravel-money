@@ -178,11 +178,11 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
     }
 
     /**
-     * The currency code, e.g. "USD".
+     * The currency, e.g. Money\Currency('USD'); getCode() returns "USD".
      */
-    public function currency(): string
+    public function currency(): Currency
     {
-        return $this->money->getCurrency()->getCode();
+        return $this->money->getCurrency();
     }
 
     /**
@@ -209,12 +209,13 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
     }
 
     /**
-     * Whether every given amount has this money's currency.
+     * Whether every given amount has this money's currency: the same code
+     * and the same precision.
      */
     public function isSameCurrency(self ...$others): bool
     {
         foreach ($others as $other) {
-            if ($other->currency() !== $this->currency()) {
+            if (! $other->currency()->equals($this->currency()) || $other->precision !== $this->precision) {
                 return false;
             }
         }
@@ -223,7 +224,8 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
     }
 
     /**
-     * Same currency and same amount. Different currencies are never equal.
+     * Same currency and same amount. Different currencies are never equal;
+     * an operand that is not a valid amount, such as a float or "abc", throws.
      */
     public function equals(self|int|string|float $other): bool
     {
@@ -359,24 +361,25 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
     }
 
     /**
-     * What percentage this amount is of $total, as a decimal string:
-     * Money::of('25')->percentageOf(Money::of('200')) is "12.50". The scale
-     * must be between 0 and MAX_SCALE.
+     * What percentage this amount is of $total, as a decimal string with
+     * $scale decimals: Money::of('25')->percentageOf(Money::of('200'), 2) is
+     * "12.50". The scale must be between 0 and MAX_SCALE.
      *
      * @return numeric-string
      */
-    public function percentageOf(self $total, int $scale = 2, ?Rounding $rounding = null): string
+    public function percentageOf(self $total, int $scale, ?Rounding $rounding = null): string
     {
         return $this->quotientOf(bcmul($this->amount(), '100', 0), $total, $scale, $rounding);
     }
 
     /**
-     * This amount divided by $other, as a decimal string: 50 / 200 is "0.2500".
+     * This amount divided by $other, as a decimal string with $scale
+     * decimals: Money::of('50')->ratioOf(Money::of('200'), 4) is "0.2500".
      * The scale must be between 0 and MAX_SCALE.
      *
      * @return numeric-string
      */
-    public function ratioOf(self $other, int $scale = 4, ?Rounding $rounding = null): string
+    public function ratioOf(self $other, int $scale, ?Rounding $rounding = null): string
     {
         return $this->quotientOf($this->amount(), $other, $scale, $rounding);
     }
@@ -401,9 +404,10 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
      * every minor unit: allocate(['owner' => 70, 'agent' => 30]).
      *
      * Each part gets its share rounded down; the leftover minor units go,
-     * one each, to the parts with the largest remainders (earlier keys win
-     * ties), as moneyphp does. Negative amounts are allocated as their
-     * absolute value and negated.
+     * one each, to the parts with the largest remainders. Ties go to keys in
+     * ascending order (for a list, the earlier parts), like goravel-money's
+     * AllocateMap, so the result never depends on insertion order. Negative
+     * amounts are allocated as their absolute value and negated.
      *
      * @template TKey of array-key
      *
@@ -447,7 +451,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
         }
 
         $order = array_keys($remainders);
-        usort($order, static fn (int|string $a, int|string $b): int => bccomp($remainders[$b], $remainders[$a], 0));
+        usort($order, static fn (int|string $a, int|string $b): int => bccomp($remainders[$b], $remainders[$a], 0) ?: self::compareKeys($a, $b));
 
         foreach (array_slice($order, 0, (int) $left) as $key) {
             $shares[$key] = bcadd($shares[$key], '1', 0);
@@ -507,7 +511,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
         $options = self::manager()->serialization();
         $array = [
             'amount' => $options['amount'] === 'decimal' ? $this->toDecimal() : $this->amount(),
-            'currency' => $this->currency(),
+            'currency' => $this->currency()->getCode(),
         ];
 
         if ($options['include_decimal'] && $options['amount'] === 'minor') {
@@ -529,9 +533,13 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
         return $this->toArray();
     }
 
+    /**
+     * The currency code and the decimal amount, "USD 1234.50". It never
+     * depends on config or the locale; use format() for display.
+     */
     public function __toString(): string
     {
-        return $this->format();
+        return $this->currency()->getCode().' '.$this->toDecimal();
     }
 
     /**
@@ -559,7 +567,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
             return $value;
         }
 
-        return new self(new MoneyPhp(Decimal::toMinor($value, $this->precision, null, $this->currency()), $this->money->getCurrency()), $this->precision);
+        return new self(new MoneyPhp(Decimal::toMinor($value, $this->precision, null, $this->currency()->getCode()), $this->money->getCurrency()), $this->precision);
     }
 
     /**
@@ -590,6 +598,23 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
         }
 
         return $other;
+    }
+
+    /**
+     * Allocation tie-break order: integer keys numerically, string keys
+     * byte by byte, integer keys before string keys.
+     */
+    private static function compareKeys(int|string $a, int|string $b): int
+    {
+        if (is_int($a) && is_int($b)) {
+            return $a <=> $b;
+        }
+
+        if (is_int($a) !== is_int($b)) {
+            return is_int($a) ? -1 : 1;
+        }
+
+        return strcmp((string) $a, (string) $b);
     }
 
     private function rounding(?Rounding $rounding): Rounding

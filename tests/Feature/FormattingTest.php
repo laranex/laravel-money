@@ -35,7 +35,8 @@ it('formats with the configured locale, then the app locale', function (): void 
 describe('with intl', function (): void {
     it('formats in the default locale', function (): void {
         expect(Money::of('1234.5', 'USD')->format())->toBe('$1,234.50')
-            ->and((string) Money::of('-1234.5', 'USD'))->toBe('-$1,234.50')
+            ->and(Money::of('-1234.5', 'USD')->format())->toBe('-$1,234.50')
+            ->and((string) Money::of('-1234.5', 'USD'))->toBe('USD -1234.50')
             ->and(Money::of('1500', 'JPY')->format())->toBe('¥1,500')
             ->and(Money::of('1.5', 'KWD')->format())->toBe("KWD\u{00A0}1.500")
             ->and(Money::of('300', 'PTS')->format())->toBe("PTS\u{00A0}300");

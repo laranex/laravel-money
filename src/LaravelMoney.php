@@ -146,7 +146,7 @@ class LaravelMoney
      */
     public function format(Money $money, ?string $locale = null): string
     {
-        return $this->formatter()->format($money->toDecimal(), $money->currency(), $money->precision(), $locale ?? $this->locale());
+        return $this->formatter()->format($money->toDecimal(), $money->currency()->getCode(), $money->precision(), $locale ?? $this->locale());
     }
 
     /**

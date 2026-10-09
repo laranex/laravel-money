@@ -12,9 +12,9 @@ class CurrencyMismatchException extends MoneyException
     {
         return new self(sprintf(
             'Cannot combine %s %s with %s %s: the amounts are in different currencies. Convert one of them first (for example with a moneyphp Converter and an exchange rate).',
-            $left->currency(),
+            $left->currency()->getCode(),
             $left->toDecimal(),
-            $right->currency(),
+            $right->currency()->getCode(),
             $right->toDecimal(),
         ));
     }
@@ -25,7 +25,7 @@ class CurrencyMismatchException extends MoneyException
             'The attribute [%s] stores %s amounts, but %s %s was given. Convert it to %s first.',
             $key,
             $expected,
-            $given->currency(),
+            $given->currency()->getCode(),
             $given->toDecimal(),
             $expected,
         ));
@@ -38,7 +38,7 @@ class CurrencyMismatchException extends MoneyException
             $key,
             $column,
             $expected,
-            $given->currency(),
+            $given->currency()->getCode(),
             $given->toDecimal(),
             $column,
         ));

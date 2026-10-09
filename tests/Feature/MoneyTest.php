@@ -19,7 +19,7 @@ describe('construction', function (): void {
         expect($money->precision())->toBe($precision)
             ->and($money->amount())->toBe($minor)
             ->and($money->toDecimal())->toBe($decimal)
-            ->and($money->currency())->toBe($currency);
+            ->and($money->currency()->getCode())->toBe($currency);
     })->with([
         'USD (2)' => ['USD', 2, '1234.5', '123450', '1234.50'],
         'MMK (2)' => ['MMK', 2, '1500', '150000', '1500.00'],
@@ -35,17 +35,17 @@ describe('construction', function (): void {
     });
 
     it('defaults to the configured currency', function (): void {
-        expect(Money::of('1')->currency())->toBe('USD');
+        expect(Money::of('1')->currency()->getCode())->toBe('USD');
 
         config()->set('money.default_currency', 'mmk');
 
-        expect(Money::of('1')->currency())->toBe('MMK')
-            ->and(Money::zero()->currency())->toBe('MMK');
+        expect(Money::of('1')->currency()->getCode())->toBe('MMK')
+            ->and(Money::zero()->currency()->getCode())->toBe('MMK');
     });
 
     it('accepts currency codes in any case and moneyphp Currency objects', function (): void {
-        expect(Money::of('1', 'eur')->currency())->toBe('EUR')
-            ->and(Money::of('1', new Currency('JPY'))->currency())->toBe('JPY');
+        expect(Money::of('1', 'eur')->currency()->getCode())->toBe('EUR')
+            ->and(Money::of('1', new Currency('JPY'))->currency()->getCode())->toBe('JPY');
     });
 
     it('accepts plain digits and consistent grouping', function (string $input, string $minor): void {
@@ -331,15 +331,15 @@ describe('percentages and ratios', function (): void {
     });
 
     it('says what percentage one amount is of another', function (): void {
-        expect(Money::of('25')->percentageOf(Money::of('200')))->toBe('12.50')
-            ->and(Money::of('1')->percentageOf(Money::of('3')))->toBe('33.33')
-            ->and(Money::of('2')->percentageOf(Money::of('3')))->toBe('66.67')
+        expect(Money::of('25')->percentageOf(Money::of('200'), 2))->toBe('12.50')
+            ->and(Money::of('1')->percentageOf(Money::of('3'), 2))->toBe('33.33')
+            ->and(Money::of('2')->percentageOf(Money::of('3'), 2))->toBe('66.67')
             ->and(Money::of('2')->percentageOf(Money::of('3'), 4))->toBe('66.6667')
             ->and(Money::of('2')->percentageOf(Money::of('3'), 0, Rounding::Floor))->toBe('66')
-            ->and(Money::of('300')->percentageOf(Money::of('200')))->toBe('150.00')
-            ->and(Money::of('-50', 'JPY')->percentageOf(Money::of('200', 'JPY')))->toBe('-25.00')
-            ->and(fn () => Money::of('1')->percentageOf(Money::zero()))->toThrow(InvalidMoneyException::class, 'Cannot divide money by zero.')
-            ->and(fn () => Money::of('1')->percentageOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class)
+            ->and(Money::of('300')->percentageOf(Money::of('200'), 2))->toBe('150.00')
+            ->and(Money::of('-50', 'JPY')->percentageOf(Money::of('200', 'JPY'), 2))->toBe('-25.00')
+            ->and(fn () => Money::of('1')->percentageOf(Money::zero(), 2))->toThrow(InvalidMoneyException::class, 'Cannot divide money by zero.')
+            ->and(fn () => Money::of('1')->percentageOf(Money::of('1', 'EUR'), 2))->toThrow(CurrencyMismatchException::class)
             ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), -1))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, -1 given.')
             ->and(Money::of('1')->percentageOf(Money::of('3'), Money::MAX_SCALE))->toBe('33.'.str_repeat('3', 100))
             ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), 101))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, 101 given.')
@@ -347,11 +347,11 @@ describe('percentages and ratios', function (): void {
     });
 
     it('computes ratios', function (): void {
-        expect(Money::of('50')->ratioOf(Money::of('200')))->toBe('0.2500')
+        expect(Money::of('50')->ratioOf(Money::of('200'), 4))->toBe('0.2500')
             ->and(Money::of('1')->ratioOf(Money::of('3'), 6))->toBe('0.333333')
             ->and(Money::of('2')->ratioOf(Money::of('3'), 2, Rounding::Floor))->toBe('0.66')
-            ->and(fn () => Money::of('1')->ratioOf(Money::zero()))->toThrow(InvalidMoneyException::class)
-            ->and(fn () => Money::of('1')->ratioOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class)
+            ->and(fn () => Money::of('1')->ratioOf(Money::zero(), 4))->toThrow(InvalidMoneyException::class)
+            ->and(fn () => Money::of('1')->ratioOf(Money::of('1', 'EUR'), 4))->toThrow(CurrencyMismatchException::class)
             ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), -2))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, -2 given.')
             ->and(Money::of('1')->ratioOf(Money::of('3'), Money::MAX_SCALE))->toBe('0.'.str_repeat('3', 100))
             ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), 101))->toThrow(InvalidMoneyException::class, 'The scale must be between 0 and 100, 101 given.')
