@@ -12,6 +12,7 @@ use Laranex\LaravelMoney\LaravelMoney;
 use Laranex\LaravelMoney\Money;
 use Laranex\LaravelMoney\Rounding;
 use Money\Currencies;
+use Money\Money as MoneyPhp;
 
 it('runs the introduction example', function (): void {
     Schema::create('orders', function (Blueprint $table): void {
@@ -68,6 +69,18 @@ it('runs the documentation examples', function (): void {
         ->and(Money::of('50')->ratioOf(Money::of('200'), 4))->toBe('0.2500')
         ->and(Money::of('12.500', 'USD')->toDecimal())->toBe('12.50')
         ->and(Money::of('1.235', 'USD', Rounding::HalfUp)->toDecimal())->toBe('1.24');
+});
+
+it('runs the allocation and interop examples', function (): void {
+    $parts = static fn (array $monies): array => array_map(static fn (Money $money): string => $money->toDecimal(), $monies);
+
+    expect($parts(Money::of('100.00', 'USD')->allocate([70, 20, 10])))->toBe(['70.00', '20.00', '10.00'])
+        ->and($parts(Money::of('0.10', 'USD')->allocate(['0.3', '0.3', '0.4'])))->toBe(['0.03', '0.03', '0.04'])
+        ->and($parts(Money::of('100.00', 'USD')->allocate(['owner' => 70, 'agent' => 20, 'platform' => 10])))
+        ->toBe(['owner' => '70.00', 'agent' => '20.00', 'platform' => '10.00'])
+        ->and((string) Money::fromMoneyPhp(MoneyPhp::EUR(500)))->toBe('EUR 5.00')
+        ->and((string) Money::of(1234, 'JPY'))->toBe('JPY 1234')
+        ->and(Money::of('-10.00', 'USD')->mod('3')->toDecimal())->toBe('-1.00');
 });
 
 it('runs the facade, registry and formatter examples', function (): void {
