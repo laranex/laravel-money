@@ -41,7 +41,7 @@ it('runs the introduction example', function (): void {
 
     expect($total->toDecimal())->toBe('1344.06')
         ->and([$a->toDecimal(), $b->toDecimal(), $c->toDecimal()])->toBe(['33.34', '33.33', '33.33'])
-        ->and(Money::of('25')->percentageOf(Money::of('200')))->toBe('12.50')
+        ->and(Money::of('25')->percentageOf(Money::of('200'), 2))->toBe('12.50')
         ->and(Money::of('1500', 'JPY')->times('1.1')->toDecimal())->toBe('1650')
         ->and(money('1234.50', 'USD')->equals($subtotal))->toBeTrue();
 
@@ -65,7 +65,7 @@ it('runs the documentation examples', function (): void {
         ->and(Money::of('200')->percent('7.5')->toDecimal())->toBe('15.00')
         ->and(Money::of('200')->addPercent(7)->toDecimal())->toBe('214.00')
         ->and(Money::of('200')->subtractPercent(15)->toDecimal())->toBe('170.00')
-        ->and(Money::of('50')->ratioOf(Money::of('200')))->toBe('0.2500')
+        ->and(Money::of('50')->ratioOf(Money::of('200'), 4))->toBe('0.2500')
         ->and(Money::of('12.500', 'USD')->toDecimal())->toBe('12.50')
         ->and(Money::of('1.235', 'USD', Rounding::HalfUp)->toDecimal())->toBe('1.24');
 });

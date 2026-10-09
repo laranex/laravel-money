@@ -100,18 +100,18 @@ class MoneyCast implements CastsAttributes, SerializesCastableAttributes
             default => throw InvalidMoneyException::notMoney($key, $value),
         };
 
-        if ($this->currencyColumn !== null && $columnCurrency !== null && $columnCurrency !== $money->currency()) {
+        if ($this->currencyColumn !== null && $columnCurrency !== null && $columnCurrency !== $money->currency()->getCode()) {
             throw CurrencyMismatchException::forCurrencyColumn($key, $this->currencyColumn, $columnCurrency, $money);
         }
 
-        if ($this->currencyColumn === null && $money->currency() !== $this->currency($attributes)->getCode()) {
+        if ($this->currencyColumn === null && ! $money->isSameCurrency(Money::zero($this->currency($attributes)))) {
             throw CurrencyMismatchException::forAttribute($key, $this->currency($attributes)->getCode(), $money);
         }
 
         $stored = [$key => $this->decimal ? $money->toDecimal() : $money->amount()];
 
         if ($this->currencyColumn !== null && $columnCurrency === null) {
-            $stored[$this->currencyColumn] = $money->currency();
+            $stored[$this->currencyColumn] = $money->currency()->getCode();
         }
 
         return $stored;

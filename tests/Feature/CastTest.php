@@ -28,7 +28,7 @@ describe('integer storage', function (): void {
 
         expect($fresh->price)->toBeInstanceOf(Money::class)
             ->and($fresh->price?->amount())->toBe('1050')
-            ->and($fresh->price?->currency())->toBe('USD');
+            ->and($fresh->price?->currency()->getCode())->toBe('USD');
     });
 
     it('uses fixed currencies, including zero-decimal and custom ones', function (): void {
@@ -41,11 +41,11 @@ describe('integer storage', function (): void {
 
         expect($product->getRawOriginal('cost'))->toBe(250000)
             ->and($product->cost?->toDecimal())->toBe('2500.00')
-            ->and($product->deposit?->currency())->toBe('EUR')
+            ->and($product->deposit?->currency()->getCode())->toBe('EUR')
             ->and($product->deposit?->amount())->toBe('999')
             ->and($product->getRawOriginal('yen'))->toBe(1500)
             ->and($product->yen?->toDecimal())->toBe('1500')
-            ->and($product->points?->currency())->toBe('PTS')
+            ->and($product->points?->currency()->getCode())->toBe('PTS')
             ->and($product->getRawOriginal('points'))->toBe(300);
     });
 
@@ -55,7 +55,7 @@ describe('integer storage', function (): void {
         $product = new Product;
         $product->price = '5000';
 
-        expect($product->price?->currency())->toBe('MMK')
+        expect($product->price?->currency()->getCode())->toBe('MMK')
             ->and($product->getAttributes()['price'])->toBe('500000');
     });
 
@@ -145,9 +145,9 @@ describe('decimal storage', function (): void {
         $fresh = freshProduct($product);
 
         expect($fresh->fee?->amount())->toBe('1234')
-            ->and($fresh->fee?->currency())->toBe('USD')
+            ->and($fresh->fee?->currency()->getCode())->toBe('USD')
             ->and($fresh->kwd?->toDecimal())->toBe('1.005')
-            ->and($fresh->kwd?->currency())->toBe('KWD');
+            ->and($fresh->kwd?->currency()->getCode())->toBe('KWD');
     });
 
     it('reads decimal strings with trailing zeros and ints', function (): void {
@@ -178,7 +178,7 @@ describe('currency column', function (): void {
 
         $fresh = freshProduct($product);
 
-        expect($fresh->balance?->currency())->toBe('JPY')
+        expect($fresh->balance?->currency()->getCode())->toBe('JPY')
             ->and($fresh->balance?->amount())->toBe('1500')
             ->and($fresh->getRawOriginal('balance'))->toBe(1500);
     });
@@ -204,7 +204,7 @@ describe('currency column', function (): void {
         $product->balance = '2.00';
 
         expect($product->currency)->toBe('USD')
-            ->and($product->balance?->currency())->toBe('USD');
+            ->and($product->balance?->currency()->getCode())->toBe('USD');
     });
 
     it('works with decimal storage', function (): void {
@@ -219,8 +219,8 @@ describe('currency column', function (): void {
         $product = Product::query()->create(['currency' => 'EUR', 'balance' => '5', 'total' => '7.25']);
         $fresh = freshProduct($product);
 
-        expect($fresh->balance?->currency())->toBe('EUR')
-            ->and($fresh->total?->currency())->toBe('EUR')
+        expect($fresh->balance?->currency()->getCode())->toBe('EUR')
+            ->and($fresh->total?->currency()->getCode())->toBe('EUR')
             ->and($fresh->total?->toDecimal())->toBe('7.25');
     });
 });
