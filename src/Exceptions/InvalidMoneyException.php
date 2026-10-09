@@ -82,6 +82,11 @@ class InvalidMoneyException extends MoneyException
         return new self(sprintf('Money can only be split into one or more parts, %d given.', $parts));
     }
 
+    public static function invalidScale(int $scale): self
+    {
+        return new self(sprintf('The scale must be zero or positive, %d given.', $scale));
+    }
+
     public static function invalidRatios(string $reason): self
     {
         return new self('Cannot allocate money: '.$reason);

@@ -359,13 +359,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
      */
     public function percentageOf(self $total, int $scale = 2, ?Rounding $rounding = null): string
     {
-        $this->sameCurrency($total);
-
-        if ($total->isZero()) {
-            throw InvalidMoneyException::divisionByZero();
-        }
-
-        return Decimal::quotient(bcmul($this->amount(), '100', 0), $total->amount(), $scale, $this->rounding($rounding));
+        return $this->quotientOf(bcmul($this->amount(), '100', 0), $total, $scale, $rounding);
     }
 
     /**
@@ -375,13 +369,7 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
      */
     public function ratioOf(self $other, int $scale = 4, ?Rounding $rounding = null): string
     {
-        $this->sameCurrency($other);
-
-        if ($other->isZero()) {
-            throw InvalidMoneyException::divisionByZero();
-        }
-
-        return Decimal::quotient($this->amount(), $other->amount(), $scale, $this->rounding($rounding));
+        return $this->quotientOf($this->amount(), $other, $scale, $rounding);
     }
 
     /**
@@ -558,6 +546,27 @@ final class Money implements Arrayable, Castable, JsonSerializable, Stringable
         }
 
         return new self(new MoneyPhp(Decimal::toMinor($value, $this->precision, null, $this->currency()), $this->money->getCurrency()), $this->precision);
+    }
+
+    /**
+     * $numerator divided by $other's amount, as a decimal string with $scale decimals.
+     *
+     * @param  numeric-string  $numerator
+     * @return numeric-string
+     */
+    private function quotientOf(string $numerator, self $other, int $scale, ?Rounding $rounding): string
+    {
+        $this->sameCurrency($other);
+
+        if ($other->isZero()) {
+            throw InvalidMoneyException::divisionByZero();
+        }
+
+        if ($scale < 0) {
+            throw InvalidMoneyException::invalidScale($scale);
+        }
+
+        return Decimal::quotient($numerator, $other->amount(), $scale, $this->rounding($rounding));
     }
 
     private function sameCurrency(self $other): self

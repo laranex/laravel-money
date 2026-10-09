@@ -67,6 +67,15 @@ describe('construction', function (): void {
             ->and(Money::of('007.10')->toDecimal())->toBe('7.10');
     });
 
+    it('goes beyond 64-bit integers', function (): void {
+        $money = Money::ofMinor(PHP_INT_MAX);
+
+        expect($money->plus('0.01')->amount())->toBe('9223372036854775808')
+            ->and($money->negated()->minus('0.02')->amount())->toBe('-9223372036854775809')
+            ->and($money->times(2)->amount())->toBe('18446744073709551614')
+            ->and(Money::ofMinor('-99999999999999999999999', 'KWD')->dividedBy(7)->amount())->toBe('-14285714285714285714286');
+    });
+
     it('handles very large amounts as strings without losing digits', function (): void {
         $money = Money::of('123456789012345678901234567890.12', 'USD');
 
@@ -102,7 +111,7 @@ describe('construction', function (): void {
 
     it('rejects malformed amounts', function (string $input): void {
         expect(fn () => Money::of($input))->toThrow(MoneyParseException::class, 'Cannot parse "'.$input.'" as an amount.');
-    })->with(['', 'abc', '1.2.3', '12,50', '1,23', '.5', '5.', '1e3', '1,234.5,0', '--1', '$10', '१२३']);
+    })->with(['', 'abc', '1.2.3', '12,50', '1,23', '.5', '5.', '1e3', '1,234.5,0', '--1', '$10', '१२३', '၁၂၃', '၁,၂၃၄.၅၀', '١٢٣', '１２']);
 
     it('rejects floats with a hint', function (): void {
         expect(fn () => Money::of(12.5))->toThrow(InvalidMoneyException::class, 'Floats are not accepted for money (12.5 given) because they cannot hold decimal amounts exactly. Pass a string such as "12.5", or an integer.')
@@ -291,7 +300,8 @@ describe('percentages and ratios', function (): void {
             ->and(Money::of('300')->percentageOf(Money::of('200')))->toBe('150.00')
             ->and(Money::of('-50', 'JPY')->percentageOf(Money::of('200', 'JPY')))->toBe('-25.00')
             ->and(fn () => Money::of('1')->percentageOf(Money::zero()))->toThrow(InvalidMoneyException::class, 'Cannot divide money by zero.')
-            ->and(fn () => Money::of('1')->percentageOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class);
+            ->and(fn () => Money::of('1')->percentageOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class)
+            ->and(fn () => Money::of('1')->percentageOf(Money::of('3'), -1))->toThrow(InvalidMoneyException::class, 'The scale must be zero or positive, -1 given.');
     });
 
     it('computes ratios', function (): void {
@@ -299,7 +309,8 @@ describe('percentages and ratios', function (): void {
             ->and(Money::of('1')->ratioOf(Money::of('3'), 6))->toBe('0.333333')
             ->and(Money::of('2')->ratioOf(Money::of('3'), 2, Rounding::Floor))->toBe('0.66')
             ->and(fn () => Money::of('1')->ratioOf(Money::zero()))->toThrow(InvalidMoneyException::class)
-            ->and(fn () => Money::of('1')->ratioOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class);
+            ->and(fn () => Money::of('1')->ratioOf(Money::of('1', 'EUR')))->toThrow(CurrencyMismatchException::class)
+            ->and(fn () => Money::of('1')->ratioOf(Money::of('3'), -2))->toThrow(InvalidMoneyException::class, 'The scale must be zero or positive, -2 given.');
     });
 });
 
@@ -333,6 +344,34 @@ describe('allocation', function (): void {
             ->and(array_map(fn (Money $money): string => $money->amount(), $decimalRatios))->toBe(['x' => '3', 'y' => '3', 'z' => '4'])
             ->and(array_map(fn (Money $money): string => $money->amount(), $ties))->toBe(['1', '1', '0'])
             ->and(array_map(fn (Money $money): string => $money->amount(), Money::ofMinor(100)->allocate([0, 1])))->toBe(['0', '100']);
+    });
+
+    it('allocates negative amounts like their absolute value', function (): void {
+        expect(array_map(fn (Money $money): string => $money->toDecimal(), Money::of('-0.05')->allocate([1, 1, 1])))->toBe(['-0.02', '-0.02', '-0.01'])
+            ->and(array_map(fn (Money $money): string => $money->toDecimal(), Money::of('-1', 'KWD')->allocate(['a' => 1, 'b' => 2])))->toBe(['a' => '-0.333', 'b' => '-0.667']);
+    });
+
+    it('never gives a leftover unit to a zero ratio', function (): void {
+        expect(array_map(fn (Money $money): string => $money->amount(), Money::ofMinor(5)->allocate([0, 1, 1, 0, 1])))->toBe(['0', '2', '2', '0', '1']);
+    });
+
+    it('keeps every minor unit for any amount and ratios', function (): void {
+        mt_srand(4);
+
+        for ($i = 0; $i < 200; $i++) {
+            $money = Money::ofMinor(mt_rand(-1_000_000, 1_000_000), ['USD', 'JPY', 'KWD'][$i % 3]);
+            $ratios = array_map(fn (): string => mt_rand(0, 50).'.'.mt_rand(0, 99), range(0, mt_rand(0, 6)));
+            $ratios[] = (string) mt_rand(1, 9);
+            $shares = $money->allocate($ratios);
+
+            expect(Money::sum($shares)->equals($money))->toBeTrue()
+                ->and(array_keys($shares))->toBe(array_keys($ratios));
+
+            foreach ($shares as $share) {
+                expect($share->isNegative() && $money->isPositive())->toBeFalse()
+                    ->and($share->isPositive() && $money->isNegative())->toBeFalse();
+            }
+        }
     });
 
     it('matches moneyphp allocation for small amounts', function (): void {

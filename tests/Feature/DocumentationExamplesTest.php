@@ -6,8 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Laranex\LaravelMoney\Casts\AsMoney;
+use Laranex\LaravelMoney\CurrencyRegistry;
+use Laranex\LaravelMoney\Formatting\Formatter;
+use Laranex\LaravelMoney\LaravelMoney;
 use Laranex\LaravelMoney\Money;
 use Laranex\LaravelMoney\Rounding;
+use Money\Currencies;
 
 it('runs the introduction example', function (): void {
     Schema::create('orders', function (Blueprint $table): void {
@@ -64,4 +68,44 @@ it('runs the documentation examples', function (): void {
         ->and(Money::of('50')->ratioOf(Money::of('200')))->toBe('0.2500')
         ->and(Money::of('12.500', 'USD')->toDecimal())->toBe('12.50')
         ->and(Money::of('1.235', 'USD', Rounding::HalfUp)->toDecimal())->toBe('1.24');
+});
+
+it('runs the facade, registry and formatter examples', function (): void {
+    config()->set('money.currencies', ['PTS' => 0]);
+    app()->forgetInstance(CurrencyRegistry::class);
+    app()->forgetInstance(LaravelMoney::class);
+
+    $registry = Laranex\LaravelMoney\Facades\LaravelMoney::currencies();
+
+    expect(Laranex\LaravelMoney\Facades\LaravelMoney::currency('mmk')->getCode())->toBe('MMK')
+        ->and(Laranex\LaravelMoney\Facades\LaravelMoney::serialization())->toBe(['amount' => 'minor', 'include_decimal' => true, 'include_formatted' => true])
+        ->and($registry->has('PTS'))->toBeTrue()
+        ->and($registry->resolve('jpy')->getCode())->toBe('JPY')
+        ->and($registry->precision('JPY'))->toBe(0)
+        ->and($registry->custom())->toBe(['PTS' => 0])
+        ->and($registry->currencies())->toBeInstanceOf(Currencies::class);
+
+    $formatter = new class implements Formatter
+    {
+        public function format(string $decimal, string $currency, int $precision, string $locale): string
+        {
+            return $currency.' '.$decimal;
+        }
+    };
+
+    Laranex\LaravelMoney\Facades\LaravelMoney::useFormatter($formatter);
+
+    expect(Money::of('-1234.5')->format())->toBe('USD -1234.50')
+        ->and(Laranex\LaravelMoney\Facades\LaravelMoney::formatter())->toBe($formatter);
+
+    Laranex\LaravelMoney\Facades\LaravelMoney::useFormatter(null);
+
+    expect(Laranex\LaravelMoney\Facades\LaravelMoney::formatter())->not->toBe($formatter);
+
+    $cast = AsMoney::castUsing(['decimal', 'currency_column=currency']);
+
+    expect($cast->storesDecimal())->toBeTrue()
+        ->and($cast->currencyColumn())->toBe('currency')
+        ->and($cast->currency(['currency' => 'jpy'])->getCode())->toBe('JPY')
+        ->and($cast->currency()->getCode())->toBe('USD');
 });
