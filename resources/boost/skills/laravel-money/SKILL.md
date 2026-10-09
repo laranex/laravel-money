@@ -112,7 +112,7 @@ $price->format();                 // "$19.99" (exact, any size); format('de_DE')
 $price->toArray();                // ['amount' => '1999', 'currency' => 'USD', 'decimal' => '19.99', 'formatted' => '$19.99']
 ```
 
-The `LaravelMoney` facade offers `of`, `ofMinor`, `zero`, `fromMoneyPhp`, `currency`, `defaultCurrency`, `precision`, `rounding`, `locale`, `format` and `currencies`.
+The `LaravelMoney` facade offers `of`, `ofMinor`, `zero`, `fromMoneyPhp`, `currency`, `defaultCurrency`, `precision`, `rounding`, `locale`, `format`, `serialization` and `currencies` (the `CurrencyRegistry`: `has`, `resolve`, `precision`, `custom`). Replace the display format app-wide with `LaravelMoney::useFormatter(new YourFormatter)` (implements `Laranex\LaravelMoney\Formatting\Formatter`).
 
 ### Errors
 
@@ -134,6 +134,7 @@ Set `config(['money.default_currency' => 'JPY'])` in a test to exercise another 
 ## Avoid
 
 - floats anywhere: `Money::of(12.5)`, `->times(1.1)`, `->percent(7.5)` throw `InvalidMoneyException`; pass strings
+- passing user input with localized digits (`၁၂၃`) or a decimal comma (`12,50`); `Money::of()` only reads ASCII digits with a dot, so normalize input first
 - doing math on `amount()` yourself or assuming two decimals; use `times`, `dividedBy`, `percent`, `split`
 - adding or comparing different currencies; convert first (`CurrencyMismatchException`)
 - assigning ints to cast attributes (`1050` is ambiguous); assign `Money` or a decimal string
