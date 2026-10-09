@@ -21,8 +21,10 @@ final class Decimal
 {
     /**
      * Parse an int or a decimal string into its sign, integer digits and
-     * fraction digits. Commas and spaces are accepted as thousands
-     * separators in the integer part only.
+     * fraction digits. The integer part may be grouped with one separator
+     * (comma, space, no-break space or narrow no-break space) used
+     * consistently: Western groups of three (1,234,567) or Indian grouping
+     * (12,34,567). The decimal separator is always a dot.
      *
      * @return array{negative: bool, integer: numeric-string, fraction: string}
      */
@@ -51,7 +53,7 @@ final class Decimal
         $fraction = $parts[1] ?? '';
 
         if (preg_match('/[, \x{00A0}\x{202F}]/u', $integer) === 1) {
-            if (preg_match('/^\d{1,3}(?:[, \x{00A0}\x{202F}]\d{2,3})*[, \x{00A0}\x{202F}]\d{3}$/u', $integer) !== 1) {
+            if (! self::isGrouped($integer)) {
                 throw MoneyParseException::invalid($input);
             }
 
@@ -69,6 +71,17 @@ final class Decimal
             'integer' => $integer,
             'fraction' => $fraction,
         ];
+    }
+
+    /**
+     * Whether $integer is digits grouped by a single separator: Western
+     * groups of three ("1,234,567") or Indian grouping ("12,34,567": the
+     * last group has three digits, earlier groups two).
+     */
+    private static function isGrouped(string $integer): bool
+    {
+        return preg_match('/^[0-9]{1,3}([, \x{00A0}\x{202F}])[0-9]{3}(?:\1[0-9]{3})*$/u', $integer) === 1
+            || preg_match('/^[0-9]{1,2}([, \x{00A0}\x{202F}])[0-9]{2}(?:\1[0-9]{2})*\1[0-9]{3}$/u', $integer) === 1;
     }
 
     /**

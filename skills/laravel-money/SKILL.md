@@ -40,7 +40,7 @@ Requires ext-bcmath. Install ext-intl for locale-aware formatting (`$1,234.50`);
 use Laranex\LaravelMoney\Money;
 use Laranex\LaravelMoney\Rounding;
 
-Money::of('1,234.50', 'USD');                 // decimal string; commas/spaces group thousands
+Money::of('1,234.50', 'USD');                 // decimal string; one comma/space separator groups thousands
 Money::of(1234, 'JPY');                       // int = whole units
 Money::of('1.235', 'USD', Rounding::HalfUp);  // round extra decimals (without a Rounding it throws)
 Money::ofMinor(123450, 'USD');                // minor units
@@ -48,6 +48,8 @@ Money::zero('KWD');
 money('12.34', 'USD');                        // helper, same as Money::of()
 Money::fromMoneyPhp($moneyphp);               // and $money->toMoneyPhp()
 ```
+
+Grouping must be consistent: one separator throughout, in Western groups of three (`1,234,567`) or Indian grouping (`12,34,567`). Mixed separators (`1 234,567`) and irregular groups (`1,234,56,789`) throw `MoneyParseException`.
 
 The currency argument is optional (defaults to `money.default_currency`).
 
@@ -90,6 +92,7 @@ $price->addPercent('8.875');           // tax
 $price->subtractPercent(15);           // discount
 $part->percentageOf($total);           // "12.50" (string, scale 2)
 $part->ratioOf($total, 4);             // "0.1250"
+// scales and roundTo() decimals are capped at Money::MAX_SCALE (100); beyond it InvalidMoneyException
 
 Money::of('100')->split(3);            // 33.34, 33.33, 33.33 (no minor unit lost)
 $payout->allocate(['owner' => 70, 'agent' => 30]); // keys kept
@@ -116,7 +119,7 @@ The `LaravelMoney` facade offers `of`, `ofMinor`, `zero`, `fromMoneyPhp`, `curre
 
 ### Errors
 
-All extend `Laranex\LaravelMoney\Exceptions\MoneyException` (an `InvalidArgumentException`): `MoneyParseException` (bad input or too many decimals), `UnknownCurrencyException`, `CurrencyMismatchException`, `InvalidMoneyException` (floats, division by zero, invalid ratios or cast values).
+All extend `Laranex\LaravelMoney\Exceptions\MoneyException` (an `InvalidArgumentException`): `MoneyParseException` (bad input or too many decimals), `UnknownCurrencyException`, `CurrencyMismatchException`, `InvalidMoneyException` (floats, division by zero, invalid ratios or cast values, a scale or `roundTo()` decimals outside the `Money::MAX_SCALE` bounds).
 
 ## Test your app
 
@@ -134,7 +137,7 @@ Set `config(['money.default_currency' => 'JPY'])` in a test to exercise another 
 ## Avoid
 
 - floats anywhere: `Money::of(12.5)`, `->times(1.1)`, `->percent(7.5)` throw `InvalidMoneyException`; pass strings
-- passing user input with localized digits (`၁၂၃`) or a decimal comma (`12,50`); `Money::of()` only reads ASCII digits with a dot, so normalize input first
+- passing user input with localized digits (`၁၂၃`), a decimal comma (`12,50`) or mixed grouping (`1 234,567`); `Money::of()` only reads ASCII digits with a dot and one consistent grouping separator, so normalize input first
 - doing math on `amount()` yourself or assuming two decimals; use `times`, `dividedBy`, `percent`, `split`
 - adding or comparing different currencies; convert first (`CurrencyMismatchException`)
 - assigning ints to cast attributes (`1050` is ambiguous); assign `Money` or a decimal string

@@ -9,7 +9,7 @@ class MoneyParseException extends MoneyException
     public static function invalid(string $input): self
     {
         return new self(sprintf(
-            'Cannot parse "%s" as an amount. Use digits with a dot as the decimal separator, e.g. "1234.50"; commas or spaces may only group thousands ("1,234.50").',
+            'Cannot parse "%s" as an amount. Use digits with a dot as the decimal separator, e.g. "1234.50"; commas or spaces may only group thousands, one separator used consistently ("1,234,567.50" or "12,34,567.50").',
             $input,
         ));
     }
