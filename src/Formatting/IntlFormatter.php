@@ -6,6 +6,7 @@ namespace Laranex\LaravelMoney\Formatting;
 
 use IntlChar;
 use Laranex\LaravelMoney\Support\Decimal;
+use Locale;
 use NumberFormatter;
 
 /**
@@ -17,9 +18,18 @@ use NumberFormatter;
  * prefix/suffix are taken from ICU, and the exact decimal string is
  * assembled from them. The affixes come from ICU formatting the exact
  * values 1 and -1, so currency spacing and sign placement match ICU.
+ *
+ * Patterns are cached per canonical locale, currency and precision. The
+ * cache is capped so a long-running worker (Octane, queues) that formats
+ * with user-supplied locales cannot grow it without bound.
  */
 final class IntlFormatter implements Formatter
 {
+    /**
+     * The most patterns kept in memory; the oldest is evicted beyond it.
+     */
+    public const MAX_CACHED_PATTERNS = 64;
+
     /**
      * @var array<string, array{positive: array{string, string}, negative: array{string, string}, digits: list<string>, decimal: string, grouping: string, primary: int, secondary: int, minimum: int}>
      */
@@ -63,10 +73,15 @@ final class IntlFormatter implements Formatter
      */
     private function pattern(string $currency, int $precision, string $locale): array
     {
+        $locale = $locale === '' ? $locale : (Locale::canonicalize($locale) ?? $locale);
         $key = $locale.'|'.$currency.'|'.$precision;
 
         if (isset($this->patterns[$key])) {
             return $this->patterns[$key];
+        }
+
+        if (count($this->patterns) >= self::MAX_CACHED_PATTERNS) {
+            unset($this->patterns[array_key_first($this->patterns)]);
         }
 
         $formatter = new NumberFormatter($locale, NumberFormatter::CURRENCY);

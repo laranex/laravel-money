@@ -62,6 +62,30 @@ describe('with intl', function (): void {
             ->and(Money::of('90071992547409.93', 'USD')->format())->toBe('$90,071,992,547,409.93');
     });
 
+    it('shares one cached pattern between equivalent locale spellings', function (): void {
+        $formatter = new IntlFormatter;
+
+        expect($formatter->format('1234.50', 'EUR', 2, 'de-DE'))->toBe("1.234,50\u{00A0}€")
+            ->and($formatter->format('1234.50', 'EUR', 2, 'de_de'))->toBe("1.234,50\u{00A0}€")
+            ->and($formatter->format('1234.50', 'EUR', 2, 'DE_de'))->toBe("1.234,50\u{00A0}€")
+            ->and(array_keys(cachedPatterns($formatter)))->toBe(['de_DE|EUR|2']);
+    });
+
+    it('never caches more than the cap, evicting the oldest pattern', function (): void {
+        $formatter = new IntlFormatter;
+
+        for ($i = 0; $i < IntlFormatter::MAX_CACHED_PATTERNS + 36; $i++) {
+            expect($formatter->format('1', 'USD', 2, 'en_US_x'.$i))->toBeString()
+                ->and(count(cachedPatterns($formatter)))->toBeLessThanOrEqual(IntlFormatter::MAX_CACHED_PATTERNS);
+        }
+
+        $keys = array_keys(cachedPatterns($formatter));
+
+        expect($keys)->toHaveCount(IntlFormatter::MAX_CACHED_PATTERNS)
+            ->and($keys[0])->toBe(Locale::canonicalize('en_US_x36').'|USD|2')
+            ->and($keys[IntlFormatter::MAX_CACHED_PATTERNS - 1])->toBe(Locale::canonicalize('en_US_x99').'|USD|2');
+    });
+
     it('matches ICU for every amount a float holds exactly', function (string $locale): void {
         $formatter = new NumberFormatter($locale, NumberFormatter::CURRENCY);
 
@@ -77,3 +101,12 @@ describe('with intl', function (): void {
         }
     })->with(['en_US', 'de_DE', 'fr_FR', 'ja_JP', 'en_IN', 'my_MM', 'ar_EG', 'es_ES', 'de_CH', 'th_TH', 'fa_IR', 'pl_PL']);
 })->skip(! extension_loaded('intl'), 'ext-intl is not installed');
+
+/**
+ * @return array<string, mixed>
+ */
+function cachedPatterns(IntlFormatter $formatter): array
+{
+    /** @var array<string, mixed> */
+    return (new ReflectionProperty($formatter, 'patterns'))->getValue($formatter);
+}
